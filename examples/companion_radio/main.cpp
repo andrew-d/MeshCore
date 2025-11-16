@@ -222,6 +222,11 @@ void setup() {
 }
 
 void loop() {
+  // Feed watchdog at start of each loop iteration
+#ifndef MESH_DEBUG
+  board.feedWatchdog();
+#endif
+
   the_mesh.loop();
   sensors.loop();
 #ifdef DISPLAY_CLASS

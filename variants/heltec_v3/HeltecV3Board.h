@@ -15,6 +15,7 @@
 #define  PIN_ADC_CTRL_INACTIVE  HIGH
 
 #include <driver/rtc_io.h>
+#include <esp_task_wdt.h>
 
 class HeltecV3Board : public ESP32Board {
 private:
@@ -47,6 +48,22 @@ public:
       rtc_gpio_hold_dis((gpio_num_t)P_LORA_NSS);
       rtc_gpio_deinit((gpio_num_t)P_LORA_DIO_1);
     }
+
+#ifndef MESH_DEBUG
+    // Initialize Task Watchdog Timer (TWDT)
+    // Using old API: esp_task_wdt_init(timeout_seconds, panic_on_timeout)
+    esp_task_wdt_init(20, true);  // 20 second timeout, panic on trigger
+    esp_task_wdt_add(NULL);       // Subscribe current task (loop task)
+
+    Serial.println("[WDT] Watchdog timer initialized (20s timeout)");
+#endif
+  }
+
+  void end() {
+#ifndef MESH_DEBUG
+    // Unsubscribe from watchdog
+    esp_task_wdt_delete(NULL);
+#endif
   }
 
   void enterDeepSleep(uint32_t secs, int pin_wake_btn = -1) {
@@ -74,6 +91,12 @@ public:
 
   void powerOff() override {
     enterDeepSleep(0);
+  }
+
+  void feedWatchdog() {
+#ifndef MESH_DEBUG
+    esp_task_wdt_reset();
+#endif
   }
 
   uint16_t getBattMilliVolts() override {

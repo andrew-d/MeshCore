@@ -115,6 +115,11 @@ void setup() {
 }
 
 void loop() {
+  // Feed watchdog at start of each loop iteration
+#ifndef MESH_DEBUG
+  board.feedWatchdog();
+#endif
+
   int len = strlen(command);
   while (Serial.available() && len < sizeof(command)-1) {
     char c = Serial.read();
